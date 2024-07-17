@@ -40,7 +40,7 @@ class UnusualPrompt(Validator):
 
     def __init__(
         self,
-        llm_callable: str = "gpt-3.5-turbo",  # str for litellm model name
+        llm_callable: str = "ollama/phi3",  # default model
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
@@ -79,16 +79,24 @@ class UnusualPrompt(Validator):
         """
         # 0. Create messages
         messages = [{"content": prompt, "role": "user"}]
-        
+
         # 0b. Setup auth kwargs if the model is from OpenAI
         kwargs = {}
         _model, provider, *_rest = get_llm_provider(self.llm_callable)
-        if provider == "openai":
-            kwargs["api_key"] = get_call_kwarg("api_key") or os.environ.get("OPENAI_API_KEY")
+
+        # if provider == "openai":
+        #    kwargs["api_key"] = get_call_kwarg("api_key") or os.environ.get(
+        #        "OPENAI_API_KEY"
+        #    )
 
         # 1. Get LLM response
         try:
-            response = completion(model=self.llm_callable, messages=messages, **kwargs)
+            response = completion(
+                model=self.llm_callable,
+                api_base="http://localhost:11434",
+                messages=messages,
+                **kwargs,
+            )
             response = response.choices[0].message.content  # type: ignore
 
             # 2. Strip the response of any leading/trailing whitespaces
